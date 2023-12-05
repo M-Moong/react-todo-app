@@ -1,54 +1,113 @@
-import React from "react";
+import React, { useState } from "react";
 
-function List({ todoData, setTodoData }) {
-  const handleClick = (id) => {
-    let newTodoData = todoData.filter((data) => data.id !== id);
-    console.log("newTodoData", newTodoData);
-    setTodoData(newTodoData);
-  };
+const List = React.memo(
+  ({
+    id,
+    title,
+    completed,
+    todoData,
+    setTodoData,
+    provided,
+    snapshot,
+    handleClick,
+  }) => {
+    console.log("List Components");
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(title);
 
-  const handleCompleteChange = (id) => {
-    let newTodoData = todoData.map((data) => {
-      if (data.id === id) {
-        data.completed = !data.completed;
-      }
-      return data;
-    });
+    const handleCompleteChange = (id) => {
+      let newTodoData = todoData.map((data) => {
+        if (data.id === id) {
+          data.completed = !data.completed;
+        }
+        return data;
+      });
 
-    // completed를 참 거짓을 변경한 데이터를 state에 다시 넣어준다.
-    setTodoData(newTodoData);
-  };
+      // completed를 참 거짓을 변경한 데이터를 state에 다시 넣어준다.
+      setTodoData(newTodoData);
+      localStorage.setItem("todoData", JSON.stringify(newTodoData));
+    };
 
-  return (
-    <div>
-      {todoData.map((data) => (
-        <div key={data.id}>
-          <div className="flex items-center justify-between w-full px-4 py-1 my-2 text-gray-600 bg-gray-100 border rounded">
-            <div className="items-center">
-              <input
-                id={data.id}
-                type="checkbox"
-                defaultChecked={false}
-                onChange={() => handleCompleteChange(data.id)}
-              />{" "}
-              <label
-                htmlFor={data.id}
-                className={data.completed ? "line-through" : ""}>
-                {data.title}
-              </label>
-            </div>
-            <div className="items-center">
-              <button
-                className="float-right px-4 py-2"
-                onClick={() => handleClick(data.id)}>
-                X
-              </button>
-            </div>
+    const handleEditChange = (e) => {
+      setEditedTitle(e.target.value);
+    };
+
+    //# 수정하는 submit
+    const handleSubmit = () => {
+      let newTodoData = todoData.map((data) => {
+        if (data.id === id) {
+          data.title = editedTitle;
+        }
+        return data;
+      });
+      setTodoData(newTodoData);
+      localStorage.setItem("todoData", JSON.stringify(newTodoData));
+      setIsEditing(false);
+    };
+
+    if (isEditing) {
+      return (
+        <div className="flex items-center justify-between w-full px-4 py-1 my-1 text-gray-600 bg-gray-100 border rounded row">
+          <form onSubmit={handleSubmit}>
+            <input
+              className="w-full px-3 py-2 mr-4 text-gray-500 appearance-none"
+              value={editedTitle}
+              onChange={handleEditChange}
+              autoFocus
+            />
+          </form>
+          <div className="items-center">
+            <button
+              class="px-4 py-2 float-right"
+              onClick={() => setIsEditing(false)}
+              type="button">
+              x
+            </button>
+            <button
+              onClick={handleSubmit}
+              class="px-4 py-2 float-right"
+              type="submit">
+              save
+            </button>
           </div>
         </div>
-      ))}
-    </div>
-  );
-}
+      );
+    } else {
+      return (
+        <div
+          key={id}
+          {...provided.draggableProps}
+          ref={provided.innerRef}
+          {...provided.dragHandleProps}
+          className={`${
+            snapshot.isDragging ? "bg-gray-400" : "bg-gray-100"
+          } flex items-center justify-between w-full px-4 py-1 my-2 text-gray-600 bg-gray-100 border rounded`}>
+          <div className="items-center">
+            <input
+              type="checkbox"
+              onChange={() => handleCompleteChange(id)}
+              defaultChecked={completed}
+            />{" "}
+            <span className={completed ? "line-through" : undefined}>
+              {title}
+            </span>
+          </div>
+          <div className="items-center">
+            <button
+              className="float-right px-4 py-2"
+              onClick={() => handleClick(id)}>
+              x
+            </button>
+            <button
+              className="float-right px-4 py-2"
+              onClick={() => setIsEditing(true)}>
+              edit
+            </button>
+          </div>
+        </div>
+      );
+    }
+  },
+);
 
 export default List;
